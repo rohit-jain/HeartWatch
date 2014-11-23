@@ -1,7 +1,10 @@
 package com.example.rohitjain.watchit;
 
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.IntentService;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -19,11 +22,14 @@ public class MyActivity extends Activity{
     private Sensor mHeartRateSensor;
     private String TAG = "Heart";
     private Intent mServiceIntent;
+    private AlarmManager am;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
+        am=(AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
+
         mServiceIntent = new Intent(this, HeartBeatPullService.class);
         //mServiceIntent.setData();
         //mSensorManager.registerListener( this,this.mHeartRateSensor, 3);
@@ -39,7 +45,10 @@ public class MyActivity extends Activity{
     @Override
     protected void onStart() {
         super.onStart();
-        this.startService(mServiceIntent);
+        //this.startService(mServiceIntent);
+        PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
+
         //registerSensorManagerListeners();
 
     }
@@ -65,7 +74,6 @@ public class MyActivity extends Activity{
     protected void onStop() {
         super.onStop();
         //this.stopService(mServiceIntent);
-
         //mSensorManager.unregisterListener(this);
     }
 

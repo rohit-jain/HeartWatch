@@ -48,6 +48,7 @@ public class HeartBeatPullService extends Service implements SensorEventListener
 
     @Override
     public void onDestroy(){
+        Log.v(TAG,"Service Killed");
         mSensorManager.unregisterListener(this);
     }
 
