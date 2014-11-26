@@ -60,9 +60,9 @@ public class MyActivity extends Activity{
     protected void onStart() {
         super.onStart();
         Log.v(TAG,"trying to connect to phone");
-        //this.startService(mServiceIntent);
-        PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
-        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
+        this.startService(mServiceIntent);
+        //PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
+        //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
 
         //registerSensorManagerListeners();
 
