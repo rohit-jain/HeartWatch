@@ -22,14 +22,13 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
-public class MyActivity extends Activity implements GoogleApiClient.ConnectionCallbacks{
+public class MyActivity extends Activity{
 
     private TextView mTextView;
     private Sensor mHeartRateSensor;
     private String TAG = "Heart";
     private Intent mServiceIntent;
     private AlarmManager am;
-    private GoogleApiClient mApiClient;
 
 
     @Override
@@ -51,50 +50,9 @@ public class MyActivity extends Activity implements GoogleApiClient.ConnectionCa
 
     }
 
-    private void initGoogleApiClient() {
-        mApiClient = new GoogleApiClient.Builder( this )
-                .addApi( Wearable.API )
-                .addConnectionCallbacks(this)
-                .build();
-        if( mApiClient != null && !( mApiClient.isConnected() || mApiClient.isConnecting() ) ) {
-            Log.v(TAG,"Invoking client connect function");
-            mApiClient.connect();
-        }
-
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mApiClient.disconnect();
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        Log.v(TAG,"connected");
-        sendMessage( "path", "text" );
-    }
-
-    private void sendMessage( final String path, final String text ) {
-        new Thread( new Runnable() {
-            @Override
-            public void run() {
-                NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
-                for(Node node : nodes.getNodes()) {
-                    Log.v(TAG,"Sending message to "+node.getDisplayName()+ " " + node.getId());
-                    MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
-                            mApiClient, node.getId(), path, text.getBytes() ).await();
-                }
-
-                runOnUiThread( new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.v(TAG,"run");
-                        //mEditText.setText( "" );
-                    }
-                });
-            }
-        }).start();
     }
 
 
@@ -102,11 +60,9 @@ public class MyActivity extends Activity implements GoogleApiClient.ConnectionCa
     protected void onStart() {
         super.onStart();
         Log.v(TAG,"trying to connect to phone");
-        initGoogleApiClient();
-
         //this.startService(mServiceIntent);
-        //PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
-        //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
+        PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
 
         //registerSensorManagerListeners();
 
@@ -132,18 +88,12 @@ public class MyActivity extends Activity implements GoogleApiClient.ConnectionCa
     @Override
     protected void onStop() {
         super.onStop();
-        if( mApiClient != null ) {
-            Log.v(TAG,"Disconnecting");
-            mApiClient.unregisterConnectionCallbacks(this);
-        }
+
         //this.stopService(mServiceIntent);
         //mSensorManager.unregisterListener(this);
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
 
-    }
 
 
 }

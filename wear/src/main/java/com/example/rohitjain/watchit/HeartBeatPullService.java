@@ -12,11 +12,17 @@ import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -24,6 +30,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -43,7 +50,7 @@ import java.util.List;
 /**
  * Created by rohitjain on 11/22/14.
  */
-public class HeartBeatPullService extends Service implements SensorEventListener {
+public class HeartBeatPullService extends Service implements SensorEventListener,GoogleApiClient.ConnectionCallbacks {
     private SensorManager mSensorManager;
     private String TAG = "Heart";
     String FILENAME = "heart_beat_log";
@@ -55,12 +62,57 @@ public class HeartBeatPullService extends Service implements SensorEventListener
     int entries = 0;
     Float avg=new Float(0.0);
     Node node; // the connected device to send the message to
-    GoogleApiClient mGoogleApiClient;
+    private GoogleApiClient mApiClient;
+
+    private class SensorData{
+        ArrayList<Float> heart_beat;
+        String id;
+        String timestamp;
+        String date;
+
+
+        public ArrayList<Float> getHeart_beat() {
+            return heart_beat;
+        }
+
+        public void setHeart_beat(ArrayList<Float> heart_beat) {
+            this.heart_beat = heart_beat;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(String timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        public String getDate() {
+            return date;
+        }
+
+        public void setDate(String date) {
+            this.date = date;
+        }
+
+
+
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         //TODO do something useful
         Log.v(TAG, "service started");
+        Log.v(TAG, "Initiate connection with phone");
+        initGoogleApiClient();
         mSensorManager = ((SensorManager)this.getSystemService(SENSOR_SERVICE));
         registerSensorManagerListeners();
         //return 1;
@@ -73,6 +125,39 @@ public class HeartBeatPullService extends Service implements SensorEventListener
                 mSensorManager.getDefaultSensor(65562),
                 3);
 
+    }
+
+    private void initGoogleApiClient() {
+        mApiClient = new GoogleApiClient.Builder( this )
+                .addApi( Wearable.API )
+                .addConnectionCallbacks(this)
+                .build();
+        if( mApiClient != null && !( mApiClient.isConnected() || mApiClient.isConnecting() ) ) {
+            Log.v(TAG,"Invoking client connect function");
+            mApiClient.connect();
+        }
+
+    }
+
+    private void sendMessage( final String path, final String text ) {
+        new Thread( new Runnable() {
+            @Override
+            public void run() {
+                NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
+                for(Node node : nodes.getNodes()) {
+                    Log.v(TAG,"Sending message to "+node.getDisplayName()+ " " + node.getId());
+                    MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
+                            mApiClient, node.getId(), path, text.getBytes() ).await();
+                }
+
+            }
+        }).start();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.v(TAG,"Connected to phone");
+        sendMessage( "path", "text" );
     }
 
     public boolean isConnected(){
@@ -107,7 +192,7 @@ public class HeartBeatPullService extends Service implements SensorEventListener
             sum = (float)0.0;
             entries=0;
             hb_min_buffer.add(avg);
-            if(hb_min_buffer.size()==5)
+            if(hb_min_buffer.size()==60)
             {
                 ArrayList<Float> copy = new ArrayList<Float>(hb_min_buffer.size());
 
@@ -122,142 +207,40 @@ public class HeartBeatPullService extends Service implements SensorEventListener
         }
     }
 
-    public Void POST(ArrayList<Float> heartBeat){
-        //InputStream inputStream = null;
-        String result = "";
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(System.currentTimeMillis());
-        Date date = cal.getTime();
-        String mDate = date.getMonth() + "/" + date.getDate() + "/" + (date.getYear()+1900);
-        int mHour = date.getHours();
-        int mMinute = date.getMinutes();
-        Log.v(TAG,"Date: "+ mDate);
-
-        try {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("id", 1);
-            jsonObject.put("heart_beat", heartBeat);
-            jsonObject.put("timestamp", mHour+":"+mMinute);
-            jsonObject.put("date",mDate);
-            Log.v(TAG,jsonObject.toString());
-
-            URL url = new URL("http://54.148.164.29/emotimon/watch/store");
-
-            HttpURLConnection urlConnection = null;
-            Log.v(TAG,"trying connection made");
-
-            urlConnection = (HttpURLConnection) url.openConnection();
-            Log.v(TAG,"connection open");
-
-            urlConnection.setRequestMethod("GET");
-            urlConnection.connect();
-            Log.v(TAG,"connection made");
-            // 1. create HttpClient
-            //HttpClient httpclient = new DefaultHttpClient();
-
-            // 2. make POST request to the given URL
-//            HttpPost httpPost = new HttpPost(url);
-
-            String json = "";
-            String serverJsonResponse = null;
-            BufferedReader reader = null;
-
-            // 3. build jsonObject
-
-
-            // Read the input stream into a String
-            InputStream inputStream = urlConnection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
-            if (inputStream == null) {
-                // Nothing to do.
-                serverJsonResponse = null;
-                Log.v(TAG,"response null");
-            }
-            reader = new BufferedReader(new InputStreamReader(inputStream));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
-                // But it does make debugging a *lot* easier if you print out the completed
-                // buffer for debugging.
-                buffer.append(line + "\n");
-            }
-
-            if (buffer.length() == 0) {
-                // Stream was empty.  No point in parsing.
-                serverJsonResponse = null;
-            }
-            serverJsonResponse = buffer.toString();
-            Log.v(TAG, serverJsonResponse.toString());
-            // 4. convert JSONObject to JSON to String
-    //        json = jsonObject.toString();
-
-            // 5. set json to StringEntity
-      //      StringEntity se = new StringEntity(json);
-
-            // 6. set httpPost Entity
-//            httpPost.setEntity(se);
-  //          Log.v(TAG,json);
-
-            // 7. Set some headers to inform server about the type of the content
-            //httpPost.setHeader("Accept", "application/json");
-    //        httpPost.setHeader("Content-Type", "application/json");
-
-            // 8. Execute POST request to the given URL
-            //Log.v(TAG,"Making post request");
-            //HttpResponse httpResponse = httpclient.execute(httpPost);
-      //      HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
-            //Log.v(TAG,"Response Length:"+httpResponse.getEntity().getContentLength());
-            //Log.v(TAG,"STATUS CODE:"+httpResponse.getStatusLine().getStatusCode());
-            // 9. receive response as inputStream
-            //inputStream = httpResponse.getEntity().getContent();
-            //Log.v(TAG, inputStream.toString());
-
-            // 10. convert inputstream to string
-            //if(inputStream != null) {
-            //    result = convertInputStreamToString(inputStream);
-            //    Log.v(TAG, result);
-            //}
-            //else
-            //    result = "Did not work!";
-
-        } catch (Exception e) {
-            Log.d("InputStream", e.getLocalizedMessage());
-        }
-
-        // 11. return result
-        //return result;
-        return null;
-    }
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
-        String line = "";
-        String result = "";
-        while((line = bufferedReader.readLine()) != null)
-            result += line;
-
-        inputStream.close();
-        return result;
-
-    }
 
     private class SensorEventLoggerTask extends
             AsyncTask<ArrayList<Float>, Void, Void> {
         @Override
         protected Void doInBackground(ArrayList<Float>... minuteFrame) {
-            //for (Float item : minuteFrame) {
-                if(isConnected())Log.v(TAG,"COnneted");
-                POST(minuteFrame[0]);
-
-                Log.v(TAG, minuteFrame[0].toString());
-            //}
+            String message = GetSerializedJSONObject(minuteFrame[0]);
+            sendMessage( message, "message" );
+            Log.v(TAG, minuteFrame[0].toString());
             return null;
         }
 
         protected void onPostExecute() {
 
         }
+    }
+
+    private String GetSerializedJSONObject(ArrayList<Float> heartBeat){
+        final Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        Date date = cal.getTime();
+        String mDate = date.getMonth() + "/" + date.getDate() + "/" + (date.getYear()+1900);
+        int mHour = date.getHours();
+        int mMinute = date.getMinutes();
+        SensorData data = new SensorData();
+
+        data.setId("1");
+        data.setHeart_beat(heartBeat);
+        data.setTimestamp(mHour+":"+mMinute);
+        data.setDate(mDate);
+
+        Gson gson = new Gson();
+        Log.v(TAG,gson.toJson(data));
+
+        return gson.toJson(data);
     }
 
     private class SensorEventFileLoggerTask extends
@@ -298,11 +281,20 @@ public class HeartBeatPullService extends Service implements SensorEventListener
     public void onDestroy(){
         Log.v(TAG,"Service Killed");
         mSensorManager.unregisterListener(this);
+        if( mApiClient != null ) {
+            Log.v(TAG,"Disconnecting");
+            mApiClient.unregisterConnectionCallbacks(this);
+        }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         //TODO for communication return IBinder implementation
         return null;
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
     }
 }
