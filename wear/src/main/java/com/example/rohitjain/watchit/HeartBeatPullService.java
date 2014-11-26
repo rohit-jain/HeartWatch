@@ -120,10 +120,15 @@ public class HeartBeatPullService extends Service implements SensorEventListener
     }
 
     public void registerSensorManagerListeners() {
-        Log.v(TAG, "registering listener");
+        Log.v(TAG, "registering heart beat listener");
         mSensorManager.registerListener(this,
                 mSensorManager.getDefaultSensor(65562),
                 3);
+
+        Log.v(TAG, "registering accelerometer listener");
+        mSensorManager.registerListener(this,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_FASTEST);
 
     }
 
@@ -171,39 +176,43 @@ public class HeartBeatPullService extends Service implements SensorEventListener
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        int bufferSize = hb_sec_buffer.size();
-        //Log.v(TAG, "sensor event: " + sensorEvent.accuracy + " = " + sensorEvent.values[0]);
-        hb_sec_buffer.add(sensorEvent.values[0]);
-        if (sensorEvent.values[0] > 0.1)
-        {
-            entries+=1;
-            sum += sensorEvent.values[0];
-        }
-        if(bufferSize == 9)
-        {
-            if(entries !=0) {
-                avg = (float) sum / entries;
-            }
-            else
-            {
-                avg=(float)0.0;
-            }
+        switch (sensorEvent.sensor.getType()) {
+            case Sensor.TYPE_ACCELEROMETER:
+                Log.v(TAG, "sensor event: " + sensorEvent.accuracy + " = " + sensorEvent.values[0] + " = " + sensorEvent.values[1] + " = " + sensorEvent.values[2]);
+                break;
 
-            sum = (float)0.0;
-            entries=0;
-            hb_min_buffer.add(avg);
-            if(hb_min_buffer.size()==60)
-            {
-                ArrayList<Float> copy = new ArrayList<Float>(hb_min_buffer.size());
+            case 65562:
 
-                for (Float foo: hb_min_buffer) {
-                    copy.add((Float)foo);
+                int bufferSize = hb_sec_buffer.size();
+                //Log.v(TAG, "sensor event: " + sensorEvent.accuracy + " = " + sensorEvent.values[0]);
+                hb_sec_buffer.add(sensorEvent.values[0]);
+                if (sensorEvent.values[0] > 0.1) {
+                    entries += 1;
+                    sum += sensorEvent.values[0];
                 }
-                new SensorEventLoggerTask().execute(copy);
-                hb_min_buffer.clear();
-            }
-            hb_sec_buffer.clear();
+                if (bufferSize == 9) {
+                    if (entries != 0) {
+                        avg = (float) sum / entries;
+                    } else {
+                        avg = (float) 0.0;
+                    }
 
+                    sum = (float) 0.0;
+                    entries = 0;
+                    hb_min_buffer.add(avg);
+                    if (hb_min_buffer.size() == 60) {
+                        ArrayList<Float> copy = new ArrayList<Float>(hb_min_buffer.size());
+
+                        for (Float foo : hb_min_buffer) {
+                            copy.add((Float) foo);
+                        }
+                        new SensorEventLoggerTask().execute(copy);
+                        hb_min_buffer.clear();
+                    }
+                    hb_sec_buffer.clear();
+
+                }
+                break;
         }
     }
 
