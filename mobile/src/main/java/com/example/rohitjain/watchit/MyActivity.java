@@ -5,8 +5,13 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.Wearable;
+
 
 public class MyActivity extends Activity {
+
+    private GoogleApiClient mApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,6 +19,13 @@ public class MyActivity extends Activity {
         setContentView(R.layout.activity_my);
     }
 
+    private void initGoogleApiClient() {
+        mApiClient = new GoogleApiClient.Builder( this )
+                .addApi( Wearable.API )
+                .build();
+
+        mApiClient.connect();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
