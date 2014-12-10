@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -29,11 +30,30 @@ import java.util.Date;
  */
 public class WearMessageListenerService extends WearableListenerService {
     private String TAG = "Mobile";
-    private String url = "http://54.148.164.29/emotimon/watch/store";
+    private String url = "http://54.148.164.29/emotimon/watch/store/heart";
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         Log.v(TAG, "Received Message: " + messageEvent.getPath());
+        //Log.v(TAG, "Received Sensor data: " + messageEvent.getData());
+        byte[] bytes_heart = new byte[1];
+        Arrays.fill(bytes_heart, (byte) 0);
+        byte[] bytes_acc = new byte[1];
+        Arrays.fill( bytes_acc, (byte) 1 );
+        if(Arrays.equals(messageEvent.getData(),bytes_heart))
+        {
+            TAG="heart";
+            url = "http://54.148.164.29/emotimon/watch/store/heart";
+        }
+        else if(Arrays.equals(messageEvent.getData(),bytes_acc))
+        {
+
+            TAG= "accelerometer";
+            url = "http://54.148.164.29/emotimon/watch/store/acc";
+        }
+
+        Log.v(TAG,"Length phone message: "+ messageEvent.getPath().length());
+
         new SensorServerLoggerTask().execute(messageEvent.getPath());
     }
 
@@ -68,8 +88,8 @@ public class WearMessageListenerService extends WearableListenerService {
             Log.v(TAG,"Making post request");
             HttpResponse httpResponse = httpclient.execute(httpPost);
             //      HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
-            Log.v(TAG,"Response Length:"+httpResponse.getEntity().getContentLength());
-            Log.v(TAG,"STATUS CODE:"+httpResponse.getStatusLine().getStatusCode());
+            //Log.v(TAG,"Response Length:"+httpResponse.getEntity().getContentLength());
+            //Log.v(TAG,"STATUS CODE:"+httpResponse.getStatusLine().getStatusCode());
             // 9. receive response as inputStream
             inputStream = httpResponse.getEntity().getContent();
             Log.v(TAG, inputStream.toString());
@@ -112,7 +132,7 @@ public class WearMessageListenerService extends WearableListenerService {
             //    if(isConnected())Log.v(TAG,"Connected to internet");
             //    POST(minuteFrame[0]);
             POST(jsonString[0]);
-            Log.v("Mobile", jsonString[0]);
+            //Log.v(TAG, jsonString[0]);
             //}
             return null;
         }

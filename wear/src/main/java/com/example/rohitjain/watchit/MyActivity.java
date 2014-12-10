@@ -27,7 +27,7 @@ public class MyActivity extends Activity{
     private TextView mTextView;
     private Sensor mHeartRateSensor;
     private String TAG = "Heart";
-    private Intent mServiceIntent;
+    private Intent mServiceIntent,mServiceAccIntent;
     private AlarmManager am;
 
 
@@ -36,8 +36,10 @@ public class MyActivity extends Activity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
         am=(AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-
+        Log.v(TAG,"starting activity");
         mServiceIntent = new Intent(this, HeartBeatPullService.class);
+        mServiceAccIntent = new Intent(this, AccelerometerDataService.class);
+
         //mServiceIntent.setData();
         //mSensorManager.registerListener( this,this.mHeartRateSensor, 3);
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
@@ -60,9 +62,17 @@ public class MyActivity extends Activity{
     protected void onStart() {
         super.onStart();
         Log.v(TAG,"trying to connect to phone");
+//        int i=1;
+//        while(i<100){
+//            Log.v(TAG,"yo");
+//            i++;
+//        }
         this.startService(mServiceIntent);
+        this.startService(mServiceAccIntent);
         //PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
+        //PendingIntent pi_1 = PendingIntent.getService(this, 0, mServiceAccIntent, 0);
         //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
+        //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi_1);
 
         //registerSensorManagerListeners();
 
