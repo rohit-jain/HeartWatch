@@ -156,7 +156,7 @@ public class AccelerometerDataService extends Service implements SensorEventList
             public void run() {
                 NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
                 for(Node node : nodes.getNodes()) {
-                    Log.v(TAG,"Length watch message: "+ path.length());
+                    //Log.v(TAG,"Length watch message: "+ path.length());
                     Log.v(TAG,"Sending message to "+node.getDisplayName()+ " " + node.getId());
                     MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
                             mApiClient, node.getId(), path, bytes ).await();
@@ -216,7 +216,7 @@ public class AccelerometerDataService extends Service implements SensorEventList
         sum[0] += acc[0];
         sum[1] += acc[1];
         sum[2] += acc[2];
-        if (bufferSize == 399) {
+        if (bufferSize == 179) {
             if (entries != 0) {
                 avg[0] = (float) sum[0] / entries;
                 avg[1] = (float) sum[1] / entries;
@@ -275,7 +275,7 @@ public class AccelerometerDataService extends Service implements SensorEventList
         int mMinute = date.getMinutes();
         AccelerometerSensorData data = new AccelerometerSensorData();
 
-        data.setId("1");
+        data.setId("2");
         data.setAccData(accelerometer);
         data.setTimestamp(mHour+":"+mMinute);
         data.setDate(mDate);

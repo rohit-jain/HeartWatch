@@ -2,25 +2,14 @@ package com.example.rohitjain.watchit;
 
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.widget.TextView;
-
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
-import com.google.android.gms.wearable.Wearable;
 
 public class MyActivity extends Activity{
 
@@ -62,19 +51,13 @@ public class MyActivity extends Activity{
     protected void onStart() {
         super.onStart();
         Log.v(TAG,"trying to connect to phone");
-//        int i=1;
-//        while(i<100){
-//            Log.v(TAG,"yo");
-//            i++;
-//        }
-        this.startService(mServiceIntent);
-        this.startService(mServiceAccIntent);
-        //PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
-        //PendingIntent pi_1 = PendingIntent.getService(this, 0, mServiceAccIntent, 0);
-        //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi);
-        //am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 1 , pi_1);
+        //this.startService(mServiceIntent);
+        //this.startService(mServiceAccIntent);
+        PendingIntent pi = PendingIntent.getService(this, 0, mServiceIntent, 0);
+        PendingIntent pi_1 = PendingIntent.getService(this, 0, mServiceAccIntent, 0);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 10 , pi);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60 * 10 , pi_1);
 
-        //registerSensorManagerListeners();
 
     }
 

@@ -1,7 +1,6 @@
 package com.example.rohitjain.watchit;
 
 import android.app.Activity;
-import android.app.IntentService;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -22,30 +21,12 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Date;
 
 /**
  * Created by rohitjain on 11/22/14.
@@ -145,7 +126,7 @@ public class HeartBeatPullService extends Service implements SensorEventListener
                 NodeApi.GetConnectedNodesResult nodes = Wearable.NodeApi.getConnectedNodes( mApiClient ).await();
                 for(Node node : nodes.getNodes()) {
                     //Log.v(TAG,"Sending message to "+node.getDisplayName()+ " " + node.getId());
-                    Log.v(TAG,"Length watch message: "+ path.length());
+                    //Log.v(TAG,"Length watch message: "+ path.length());
                     MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(
                             mApiClient, node.getId(), path, bytes ).await();
                 }
@@ -158,15 +139,6 @@ public class HeartBeatPullService extends Service implements SensorEventListener
     public void onConnected(Bundle bundle) {
         Log.v(TAG,"Connected to phone");
         //sendMessage( "path", "text" );
-    }
-
-    public boolean isConnected(){
-        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected())
-            return true;
-        else
-            return false;
     }
 
     @Override
@@ -238,7 +210,7 @@ public class HeartBeatPullService extends Service implements SensorEventListener
         int mMinute = date.getMinutes();
         SensorData data = new SensorData();
 
-        data.setId("1");
+        data.setId("2");
         data.setHeart_beat(heartBeat);
         data.setTimestamp(mHour+":"+mMinute);
         data.setDate(mDate);
@@ -249,6 +221,8 @@ public class HeartBeatPullService extends Service implements SensorEventListener
         return gson.toJson(data);
     }
 
+    //code to write sensor data to file on watch
+    /*
     private class SensorEventFileLoggerTask extends
             AsyncTask<SensorEvent, Void, Void> {
         @Override
@@ -275,8 +249,7 @@ public class HeartBeatPullService extends Service implements SensorEventListener
 
         }
     }
-
-
+    */
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {

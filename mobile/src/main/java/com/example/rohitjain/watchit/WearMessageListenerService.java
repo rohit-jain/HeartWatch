@@ -1,6 +1,5 @@
 package com.example.rohitjain.watchit;
 
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -12,54 +11,50 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
  * Created by rohitjain on 11/26/14.
  */
 public class WearMessageListenerService extends WearableListenerService {
     private String TAG = "Mobile";
-    private String url = "http://54.148.164.29/emotimon/watch/store/heart";
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         Log.v(TAG, "Received Message: " + messageEvent.getPath());
         //Log.v(TAG, "Received Sensor data: " + messageEvent.getData());
+
+
+        //Log.v(TAG,"Length phone message: "+ messageEvent.getPath().length());
+
+        new SensorServerLoggerTask().execute(messageEvent.getPath(),messageEvent.getData());
+    }
+
+    public Void POST(String data,byte[] bytes){
+        InputStream inputStream = null;
+        String result;
+        String url = "http://54.148.164.29/emotimon/watch/store/heart";
+
         byte[] bytes_heart = new byte[1];
         Arrays.fill(bytes_heart, (byte) 0);
         byte[] bytes_acc = new byte[1];
         Arrays.fill( bytes_acc, (byte) 1 );
-        if(Arrays.equals(messageEvent.getData(),bytes_heart))
+        if(Arrays.equals(bytes,bytes_heart))
         {
             TAG="heart";
             url = "http://54.148.164.29/emotimon/watch/store/heart";
         }
-        else if(Arrays.equals(messageEvent.getData(),bytes_acc))
+        else if(Arrays.equals(bytes,bytes_acc))
         {
 
             TAG= "accelerometer";
             url = "http://54.148.164.29/emotimon/watch/store/acc";
         }
-
-        Log.v(TAG,"Length phone message: "+ messageEvent.getPath().length());
-
-        new SensorServerLoggerTask().execute(messageEvent.getPath());
-    }
-
-    public Void POST(String data){
-        InputStream inputStream = null;
-        String result = "";
 
 
         try {
@@ -85,14 +80,14 @@ public class WearMessageListenerService extends WearableListenerService {
             httpPost.setHeader("Content-Type", "application/json");
 
             // 8. Execute POST request to the given URL
-            Log.v(TAG,"Making post request");
+            Log.v(TAG,"Making post request to "+ url);
             HttpResponse httpResponse = httpclient.execute(httpPost);
             //      HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
             //Log.v(TAG,"Response Length:"+httpResponse.getEntity().getContentLength());
             //Log.v(TAG,"STATUS CODE:"+httpResponse.getStatusLine().getStatusCode());
             // 9. receive response as inputStream
             inputStream = httpResponse.getEntity().getContent();
-            Log.v(TAG, inputStream.toString());
+            //Log.v(TAG, inputStream.toString());
 
             // 10. convert inputstream to string
             if(inputStream != null) {
@@ -125,13 +120,13 @@ public class WearMessageListenerService extends WearableListenerService {
 
 
     private class SensorServerLoggerTask extends
-            AsyncTask<String, Void, Void> {
+            AsyncTask<Object, Void, Void> {
         @Override
-        protected Void doInBackground(String... jsonString) {
+        protected Void doInBackground(Object... jsonString) {
             //for (Float item : minuteFrame) {
             //    if(isConnected())Log.v(TAG,"Connected to internet");
             //    POST(minuteFrame[0]);
-            POST(jsonString[0]);
+            POST((String)jsonString[0],(byte[])jsonString[1]);
             //Log.v(TAG, jsonString[0]);
             //}
             return null;
